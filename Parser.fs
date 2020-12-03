@@ -7,9 +7,9 @@ open System.Text.RegularExpressions
 
 type Event1C = {
     Date: DateTime
-    Duration: uint32
+    Duration: int64
     Name: string
-    Level: uint32
+    Level: int
     Properties: Map<string, string> 
 } 
     
@@ -63,12 +63,12 @@ module Parser =
     let parse(date: DateTime, sr: StreamReader, buffer: StringBuilder): Event1C =
         let mutable endOfLine = false
 
-        let minutes = readToDelimiter(sr, ':', buffer, &endOfLine)
-        let seconds = readToDelimiter(sr, '.', buffer, &endOfLine)
-        let microSeconds = readToDelimiter(sr, '-', buffer, &endOfLine)
-        let duration = readToDelimiter(sr, ',', buffer, &endOfLine)
+        let minutes = readToDelimiter(sr, ':', buffer, &endOfLine) |> Int32.Parse
+        let seconds = readToDelimiter(sr, '.', buffer, &endOfLine) |> Int32.Parse
+        let microSeconds = readToDelimiter(sr, '-', buffer, &endOfLine) |> Int64.Parse
+        let duration = readToDelimiter(sr, ',', buffer, &endOfLine) |> Int64.Parse
         let name = readToDelimiter(sr, ',', buffer, &endOfLine).ToUpper()
-        let level = readToDelimiter(sr, ',', buffer, &endOfLine)
+        let level = readToDelimiter(sr, ',', buffer, &endOfLine) |> Int32.Parse
 
         let properties = [|
             while (not endOfLine && not sr.EndOfStream) do
@@ -83,10 +83,10 @@ module Parser =
             |> Seq.map (fun (k,v) -> k, v |> Seq.map (fun (l,r) -> r) |> (fun x -> String.Join(char 0x17, x)))
 
         {
-            Date = date.AddMinutes(float minutes).AddSeconds(float seconds).AddTicks((int64 microSeconds) * 10L) 
-            Duration = uint32 duration
+            Date = date.AddMinutes(float minutes).AddSeconds(float seconds).AddTicks(microSeconds * 10L) 
+            Duration = duration
             Name = name
-            Level = uint32 level
+            Level = level
             Properties = props |> Map.ofSeq
         }
 
